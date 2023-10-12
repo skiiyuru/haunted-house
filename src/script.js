@@ -1,6 +1,8 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js"
 import * as dat from "lil-gui"
+import { FontLoader } from "three/addons/loaders/FontLoader.js"
+import { TextGeometry } from "three/addons/geometries/TextGeometry.js"
 
 THREE.ColorManagement.enabled = false
 
@@ -48,6 +50,24 @@ const grassNormalTexture = textureLoader.load("/textures/grass/normal.jpg")
 const grassRoughnessTexture = textureLoader.load(
   "/textures/grass/roughness.jpg"
 )
+
+const stoneColorTexture = textureLoader.load("textures/stone/color.jpg")
+const stoneAoTexture = textureLoader.load(
+  "/textures/stone/ambientOcclusion.jpg"
+)
+const stoneNormalTexture = textureLoader.load("/textures/stone/normal.jpg")
+const stoneRoughnessTexture = textureLoader.load(
+  "/textures/stone/roughness.jpg"
+)
+
+// const textColorTexture = textureLoader.load("textures/text/color.jpg")
+// const textAoTexture = textureLoader.load("/textures/text/ambientOcclusion.jpg")
+// const textNormalTexture = textureLoader.load("/textures/text/normal.jpg")
+
+const bushColorTexture = textureLoader.load("textures/bush/color.jpg")
+const bushAoTexture = textureLoader.load("/textures/bush/ambientOcclusion.jpg")
+const bushNormalTexture = textureLoader.load("/textures/bush/normal.jpg")
+const bushRoughnessTexture = textureLoader.load("/textures/bush/roughness.jpg")
 
 const grassTextures = [
   grassColorTexture,
@@ -128,7 +148,12 @@ door.position.y = 1
 
 // Bushes
 const bushGeometry = new THREE.SphereGeometry(1, 16, 16)
-const bushMaterial = new THREE.MeshStandardMaterial({ color: "#89c854" })
+const bushMaterial = new THREE.MeshStandardMaterial({
+  map: bushColorTexture,
+  aoMap: bushAoTexture,
+  normalMap: bushNormalTexture,
+  roughnessMap: bushRoughnessTexture,
+})
 
 const bushData = [
   {
@@ -149,12 +174,62 @@ const bushData = [
   },
 ]
 
+bushData.map((data) => {
+  const bush = new THREE.Mesh(bushGeometry, bushMaterial)
+  bush.geometry.setAttribute(
+    "uv2",
+    new THREE.Float32BufferAttribute(bush.geometry.attributes.uv.array, 2)
+  )
+  bush.scale.set(...data.scale)
+  bush.position.set(...data.position)
+  bush.castShadow = true
+  house.add(bush)
+})
+
+// Text
+const fontLoader = new FontLoader()
+fontLoader.load("/fonts/creepster-regular.json", (font) => {
+  const textGeometry = new TextGeometry("Ghosts of Kiiyuru", {
+    font,
+    size: 0.3,
+    height: 0.1,
+    curveSegments: 5,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.02,
+    bevelOffset: 0,
+    bevelSegments: 4,
+  })
+  textGeometry.center()
+  const text = new THREE.Mesh(
+    textGeometry,
+    new THREE.MeshStandardMaterial({
+      // map: stoneColorTexture,
+      // aoMap: stoneAoTexture,
+      // normalMap: stoneNormalTexture,
+      // roughnessMap: stoneRoughnessTexture,
+    })
+  )
+  text.geometry.setAttribute(
+    "uv2",
+    new THREE.Float32BufferAttribute(text.geometry.attributes.uv.array, 2)
+  )
+  house.add(text)
+  text.position.set(0, 2.25, 2)
+  text.castShadow = true
+})
+
 // Graves
 const graves = new THREE.Group()
 scene.add(graves)
 
 const graveGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.2)
-const graveMaterial = new THREE.MeshStandardMaterial({ color: "#b2b6b1" })
+const graveMaterial = new THREE.MeshStandardMaterial({
+  map: stoneColorTexture,
+  aoMap: stoneAoTexture,
+  normalMap: stoneNormalTexture,
+  roughnessMap: stoneRoughnessTexture,
+})
 
 for (let i = 0; i < 50; i++) {
   const angle = Math.random() * Math.PI * 2
@@ -162,20 +237,16 @@ for (let i = 0; i < 50; i++) {
   const x = Math.cos(angle) * radius
   const z = Math.sin(angle) * radius
   const grave = new THREE.Mesh(graveGeometry, graveMaterial)
+  grave.geometry.setAttribute(
+    "uv2",
+    new THREE.Float32BufferAttribute(grave.geometry.attributes.uv.array, 2)
+  )
   grave.position.set(x, 0.3, z)
   grave.rotation.y = (Math.random() - 0.5) * 0.4
   grave.rotation.z = (Math.random() - 0.5) * 0.4
   grave.castShadow = true
   graves.add(grave)
 }
-
-bushData.map((data) => {
-  const bush = new THREE.Mesh(bushGeometry, bushMaterial)
-  bush.scale.set(...data.scale)
-  bush.position.set(...data.position)
-  bush.castShadow = true
-  house.add(bush)
-})
 
 // Floor
 const floor = new THREE.Mesh(
@@ -293,6 +364,7 @@ ghost1.castShadow = true
 ghost2.castShadow = true
 ghost3.castShadow = true
 walls.castShadow = true
+walls.receiveShadow = true
 floor.receiveShadow = true
 
 // Optimizations
